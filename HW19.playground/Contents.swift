@@ -31,7 +31,9 @@ struct MarvelURL {
         components.scheme = scheme
         components.host = host
         components.path = path
-        components.query = "ts=" + ts + "&apikey=" + publicKey + "&hash=" + hash
+        components.queryItems = [URLQueryItem(name: "ts", value: ts),
+                                 URLQueryItem(name: "apikey", value: publicKey),
+                                 URLQueryItem(name: "hash", value: hash)]
     }
     
     public func getStringUrl() -> String {
@@ -44,15 +46,21 @@ func getData(urlRequest: String) {
     guard let url = urlRequest else { return }
     
     URLSession.shared.dataTask(with: url) { data, response, error in
-        if let error = error {
-            print("Error \(error.localizedDescription)")
-        } else if let response = response as? HTTPURLResponse, response.statusCode == 200 {
+        guard let response = response as? HTTPURLResponse else {
+            print("Проблемы с сетью")
+            return
+        }
+        switch response.statusCode {
+        case 200:
             guard let data = data,
                   let dataAsString = String(data: data, encoding: .utf8) else { return }
-            print("Responce status code - \(response.statusCode)\n")
-            print(dataAsString)
-        } else if let response = response as? HTTPURLResponse {
-            print("Response status code - \(response.statusCode)")
+            print("Responce status code - 200 \n\(dataAsString)")
+        default:
+            if let error = error {
+                print("Ошибка \(error.localizedDescription)")
+            } else {
+                print("Статус кода запроса - \(response.statusCode)")
+            }
         }
     }.resume()
 }
